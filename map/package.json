@@ -36,5 +36,12 @@
     "traceur-runtime": "0.0.59",
     "typescript": "^2.6.1",
     "vinyl-source-stream": "^1.1.0"
+  },
+  "dependencies": {
+    "ws": "^4.0.0"
+  },
+  "optionalDependencies": {
+    "bufferutil": "^3.0.3",
+    "utf-8-validate": "^4.0.0"
   }
 }

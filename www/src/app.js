@@ -12,7 +12,10 @@ const {
     if (!_.init.app) {
       console.log('init app');
 
-      attachStreamSim(mutation);
+      connectToMapServer(mutation);
+      connectToSignaler(mutation);
+
+      // attachStreamSim(mutation);
 
       _.init.app = true;
     }
@@ -118,6 +121,30 @@ render(
     messages: [{message: 'Welcome!'}]
   }, document.body
 );
+
+let retries = 0;
+function connectToMapServer(mutation) {
+  const socket = new WebSocket('ws://localhost:8888');
+
+  socket.addEventListener('open', () => {
+    retries = 0;
+    console.log('connected to map server!');
+  });
+
+  socket.addEventListener('close', () => {
+    setTimeout(() => connectToMapServer(mutation), Math.pow(2, retries) * 500);
+    retries++;
+  });
+
+  socket.addEventListener('message', event => {
+    const {id, image, location, color} = JSON.parse(event.data)[1];
+    mutation(NEW_STREAM, mutation)({id, image, location, color});
+  });
+}
+
+function connectToSignaler(mutation) {
+
+}
 
 function attachStreamSim(mutation) {
   setInterval(
