@@ -118,22 +118,22 @@ render(
     state: 'main',
     map:{ size: {width: 240, height: 240 / Math.PI}},
     streams: {latest:[], mostWatched: []},
-    messages: [{message: 'Welcome!'}]
+    messages: [{message: 'welcome to globe.camera!'}]
   }, document.body
 );
 
-let retries = 0;
+let mapRetries = 0;
 function connectToMapServer(mutation) {
   const socket = new WebSocket('ws://localhost:8888');
 
   socket.addEventListener('open', () => {
-    retries = 0;
+    mapRetries = 0;
     console.log('connected to map server!');
   });
 
   socket.addEventListener('close', () => {
-    setTimeout(() => connectToMapServer(mutation), Math.pow(2, retries) * 500);
-    retries++;
+    setTimeout(() => connectToMapServer(mutation), Math.pow(2, mapRetries) * 500);
+    mapRetries++;
   });
 
   socket.addEventListener('message', event => {
@@ -142,8 +142,23 @@ function connectToMapServer(mutation) {
   });
 }
 
+let signalerRetries = 0;
 function connectToSignaler(mutation) {
+  const socket = new WebSocket('wss://p2p.ninja/signaler');
 
+  socket.addEventListener('open', () => {
+    signalerRetries = 0;
+    console.log('connected to signaler server!');
+  });
+
+  socket.addEventListener('close', () => {
+    setTimeout(() => connectToSignaler(mutation), Math.pow(2, signalerRetries) * 500);
+    signalerRetries++;
+  });
+
+  socket.addEventListener('message', event => {
+    console.log('signaler', event);
+  })
 }
 
 function attachStreamSim(mutation) {

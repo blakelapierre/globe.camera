@@ -20,5 +20,5 @@ setInterval(
           location = [Math.random() * 180 - 90, Math.random() * 360 - 180],
           color = `rgba(${Math.round(Math.random() * 255)}, ${Math.round(Math.random() * 255)}, ${Math.round(Math.random() * 255)}, 1)`;
 
-    server.clients.forEach(socket => socket.send(JSON.stringify(['NEW_STREAM', {id, image, location, color}])));
+    server.clients.forEach(socket => socket.send(JSON.stringify(['NEW_STREAM', {id, image, location, color}]), error => error ? console.error('send error', error) : undefined));
   }, 1000);
