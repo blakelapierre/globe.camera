@@ -24,23 +24,18 @@ server.on('connection', socket => {
     const [type, message] = JSON.parse(data);
 
     switch (type) {
-      case 'SHARE_STREAM':
-        const broadcast = {id: new UInt8Array(64), in: new UInt8Array(64), out: new UInt8Array(64)},
-              sender = new UInt8Array(64);
+      case 'SHARE_CAMERA':
+        const broadcast = {id: randomBytes(64), in: randomBytes(64), out: randomBytes(64)},
+              sender = randomBytes(64);
 
         try {
-          randomBytes(broadcast.id);
-          randomBytes(broadcast.in);
-          randomBytes(broadcast.out);
-          randomBytes(sender);
-
           const broadcaster = createBroadcaster(broadcast, sender);
 
-          socket.send(JSON.stringify(['SHARE_STREAM', {broadcast, sender}]));
+          socket.send(JSON.stringify(['SHARE_CAMERA', {broadcast, sender}]));
         }
-        catch (e) {
-          console.log('SHARE_STREAM bytes generation error', error);
-          socket.send(JSON.stringify(['SHARE_STREAM_ERROR']), error ? console.error('SHARE_STREAM_ERROR send error', error) : undefined);
+        catch (error) {
+          console.log('SHARE_CAMERA bytes generation error', error);
+          socket.send(JSON.stringify(['SHARE_CAMERA_ERROR']), error ? console.error('SHARE_CAMERA_ERROR send error', error) : undefined);
         }
 
       case 'REGISTER_AS_BROADCASTER':
@@ -61,7 +56,8 @@ generateFakeData();
 function createBroadcaster(broadcast, sender) {
   const broadcaster = getBroadcaster();
 
-  assignBroadcaster(broadcaster, broadcast, sender));
+  if (broadcaster) assignBroadcaster(broadcaster, broadcast, sender);
+  else console.error('failed to create broadcaster!');
 
   function getBroadcaster() {
     if (state.availableBroadcasters.length > 0) return state.availableBroadcasters[0];
