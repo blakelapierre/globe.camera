@@ -3,9 +3,9 @@ globe.camera
 How it works (in text based diagrams)
 
 
-                             |Broadcaster
-WWW Server <-----------------|Streamer
-             get application |Viewer
+                              |Broadcaster
+WWW Server <----------------- |Streamer
+             get application  |Viewer
 
 
 
