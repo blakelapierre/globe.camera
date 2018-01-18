@@ -1,0 +1,34 @@
+globe.camera
+
+How it works (in text based diagrams)
+
+
+                             |Broadcaster
+WWW Server <-----------------|Streamer
+             get application |Viewer
+
+
+
+Map Server <----------- Broadcaster
+             registers
+
+Map Server <----------- Streamer
+             registers
+
+Map Server <----------- Viewer
+             registers
+
+
+Map Server -------> Streamer --------> Broadcaster
+            tells             to use
+
+Map Server -------> Viewer --------> Broadcaster
+            tells           to use
+
+
+
+Streamer ------> Signaling Server ---------------> Broadcaster
+          uses                     to connect to
+
+Viewer ------> Signaling Server ---------------> Broadcaster ----------> Streamer
+        uses                     to connect to                to watch
