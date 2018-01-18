@@ -27,8 +27,8 @@ Map Server -------> Viewer --------> Broadcaster
 
 
 
-Streamer ------> Signaling Server ---------------> Broadcaster
-          uses  (p2p.ninja/signal) to connect to
+Streamer ------>  Signaling Server  ---------------> Broadcaster
+          uses  (p2p.ninja/signaler) to connect to
 
-Viewer ------> Signaling Server ---------------> Broadcaster ----------> Streamer
-        uses  (p2p.ninja/signal) to connect to                to watch
+Viewer ------>  Signaling Server  ---------------> Broadcaster ----------> Streamer
+        uses  (p2p.ninja/signaler) to connect to                to watch

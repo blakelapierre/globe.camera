@@ -229,7 +229,7 @@ const paths = {
     less: ['src/**/*.less'],
     html: ['./src/index.html'],
     images: ['./src/**/*.{svg,gif,png,jpg}'],
-    scripts: ['src/**/*.js'],
+    scripts: ['src/**/*.{ts,js}'],
     templates: ['src/modules/**/template.html'],
     vendor: ['!./node_modules/*/node_modules/**']
             .concat(_.map(dependencies, (version, dependency) => { return `./node_modules/${dependency}/**/*.js`; } )),

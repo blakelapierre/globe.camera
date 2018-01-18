@@ -55,6 +55,7 @@ server.on('connection', socket => {
 
         socket.broadcaster = broadcaster;
 
+        // not sure we actually need to send the id here...
         socket.send(JSON.stringify(['REGISTERED_AS_BROADCASTER', {id: broadcaster.id}]), error => error ? console.error('REGISTERED_AS_BROADCASTER send error', error) : undefined);
 
         console.log(`New broadcaster: ${broadcaster.id.toString('hex')}`);
