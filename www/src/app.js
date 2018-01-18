@@ -1,6 +1,9 @@
 import { h, render } from 'preact-cycle';
 
+import {becomeBroadcaster} from './broadcaster';
+
 const {
+  BECOME_BROADCASTER,
   INIT_APP,
   INIT_MAP_CANVAS,
   LOAD_STREAM,
@@ -9,6 +12,12 @@ const {
   NEW_STREAM,
   PLOT_STREAM
 } = {
+  BECOME_BROADCASTER: (_, mutation) => {
+    becomeBroadcaster(id => {
+      console.log('registered', id);
+    });
+  },
+
   INIT_APP: (_, mutation, element) => {
     if (!_.init.app) {
       console.log('init app');
@@ -136,6 +145,7 @@ const Map = ({map:{size:{width, height}}}, {mutation}) => (
 
 const Donate = ({}, {mutation}) => (
   <donate>
+    <button onClick={mutation(BECOME_BROADCASTER, mutation)}>Become A Broadcaster</button>
     <button>Donate</button>
     <button onClick={mutation(SHARE_CAMERA, mutation)}>Share Camera View</button>
   </donate>

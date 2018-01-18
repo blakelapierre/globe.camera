@@ -13,11 +13,20 @@ const state = {
   availableBroadcasters: []
 };
 
+function remove(item, array) {
+  const index = array.indexOf(item);
+
+  if (index > -1) array.splice(index, 1);
+}
+
 server.on('connection', socket => {
   socket.on('close', () => {
-    const index = state.broadcasters.indexOf(socket);
+    if (socket.broadcaster) {
+      remove(socket.broadcaster, state.broadcasters);
+      remove(socket.broadcaster, state.availableBroadcasters);
 
-    if (index > -1) state.broadcasters.splice(index, 1);
+      console.log(`Lost broadcaster: ${socket.broadcaster.id.toString('hex')}`);
+    }
   });
 
   socket.on('message', data => {
@@ -31,18 +40,24 @@ server.on('connection', socket => {
         try {
           const broadcaster = createBroadcaster(broadcast, sender);
 
-          socket.send(JSON.stringify(['SHARE_CAMERA', {broadcast, sender}]));
+          socket.send(JSON.stringify(['SHARE_CAMERA', {broadcast, sender}]), error => error ? console.error('SHARE_CAMERA send error', error) : undefined);
         }
         catch (error) {
           console.log('SHARE_CAMERA bytes generation error', error);
-          socket.send(JSON.stringify(['SHARE_CAMERA_ERROR']), error ? console.error('SHARE_CAMERA_ERROR send error', error) : undefined);
+          socket.send(JSON.stringify(['SHARE_CAMERA_ERROR']), error => error ? console.error('SHARE_CAMERA_ERROR send error', error) : undefined);
         }
 
       case 'REGISTER_AS_BROADCASTER':
-        const broadcaster = {socket, assignedBroadcasts: []};
+        const broadcaster = {id: randomBytes(64), socket, assignedBroadcasts: []};
 
         state.broadcasters.push(broadcaster);
         state.availableBroadcasters.push(broadcaster);
+
+        socket.broadcaster = broadcaster;
+
+        socket.send(JSON.stringify(['REGISTERED_AS_BROADCASTER', {id: broadcaster.id}]), error => error ? console.error('REGISTERED_AS_BROADCASTER send error', error) : undefined);
+
+        console.log(`New broadcaster: ${broadcaster.id.toString('hex')}`);
       default:
         break;
     }
@@ -67,7 +82,7 @@ function createBroadcaster(broadcast, sender) {
 
   function assignBroadcaster(broadcaster, broadcast, sender) {
     if (broadcaster.socket.readyState === WebSocket.OPEN) {
-      broadcaster.socket.send(JSON.stringify(['NEW_STREAM', {broadcast, sender}]));
+      broadcaster.socket.send(JSON.stringify(['NEW_STREAM', {broadcast, sender}]), error => error ? console.error('NEW_STREAM send error', error) : undefined);
       broadcaster.assignedBroadcasts.push({broadcast, sender});
     }
     else {
