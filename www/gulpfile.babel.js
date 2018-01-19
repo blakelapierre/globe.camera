@@ -91,7 +91,7 @@ gulp.task('js:app', ['js:lint'],
       entries: [paths.src.app],
       debug: true
     })
-      .plugin(tsify, { noImplicityAny: true })
+      .plugin(tsify, { target: 'es2015', noImplicityAny: true })
       .transform(babelify)
       .external(_.keys(dependencies))
       .bundle()

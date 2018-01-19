@@ -2,6 +2,8 @@ import { h, render } from 'preact-cycle';
 
 import {becomeBroadcaster} from './broadcaster';
 
+import signalServerConnection from './signalServerConnection';
+
 const {
   BECOME_BROADCASTER,
   INIT_APP,
@@ -14,7 +16,7 @@ const {
 } = {
   BECOME_BROADCASTER: (_, mutation) => {
     becomeBroadcaster(id => {
-      console.log('registered', id);
+      console.log('broadcaster registered', id);
     });
   },
 
@@ -23,7 +25,16 @@ const {
       console.log('init app');
 
       _.mapServer = connectToMapServer(mutation);
-      _.signaler = connectToSignaler(mutation);
+      // _.signaler = connectToSignaler(mutation);
+      _.signaler = signalServerConnection({
+                   'signal': {
+                     'connection-state': status => console.log('connection-state', status),
+                     'partner-message': ([partner, message]) => console.log('partner-message', partner, message),
+                   },
+                   'peer': {
+                     'connection': peerConnection => console.log('connection', peerConnection)
+                   }
+                 });
 
       // attachStreamSim(mutation);
 
@@ -48,7 +59,7 @@ const {
 
   LOAD_STREAM: (_, id, event) => {
     _.state = 'watch-stream';
-    _.stream.id = id;
+    _.streamId = id;
     // connectToStream(id);
   },
 
@@ -64,7 +75,11 @@ const {
       .getUserMedia({audio: true, video: true})
       .then(stream => {
         mutation(_ => {
-          _.video = window.URL.createObjectURL(stream);
+          _.sharedStream = stream;
+          _.videoURL = window.URL.createObjectURL(stream);
+
+          _.mapServer.SHARE_CAMERA();
+
           return _
         })();
       })
@@ -74,8 +89,6 @@ const {
           return _;
         })();
       });
-
-    _.mapServer.SHARE_CAMERA();
 
     return _;
   },
@@ -94,7 +107,7 @@ const {
   }
 };
 
-const App = ({map, messages, streams: {latest, mostWatched}, video}, {mutation}) => (
+const App = ({map, messages, streams: {latest, mostWatched}, videoURL}, {mutation}) => (
   <app ref={mutation(INIT_APP, mutation)}>
     {messages.length > 0 ? <Messages messages={messages}/> : undefined}
     <display-area>
@@ -102,7 +115,7 @@ const App = ({map, messages, streams: {latest, mostWatched}, video}, {mutation})
       <Map map={map}/>
       {mostWatched.length > 0 ? <StreamList title="most watched" streams={mostWatched} /> : undefined}
     </display-area>
-    {video ? <Video video={video} /> : undefined}
+    {videoURL ? <Video video={videoURL} /> : undefined}
     <Donate />
   </app>
 );
@@ -143,9 +156,9 @@ const Map = ({map:{size:{width, height}}}, {mutation}) => (
   </map>
 );
 
-const Donate = ({}, {mutation}) => (
+const Donate = ({}, {mutation, map:{stats:{broadcasters, availableBroadcasters}}}) => (
   <donate>
-    <button onClick={mutation(BECOME_BROADCASTER, mutation)}>Become A Broadcaster</button>
+    <button onClick={mutation(BECOME_BROADCASTER, mutation)}>Become A Broadcaster ({availableBroadcasters || 0} of {broadcasters || 0} available)</button>
     <button>Donate</button>
     <button onClick={mutation(SHARE_CAMERA, mutation)}>Share Camera View</button>
   </donate>
@@ -155,7 +168,7 @@ render(
   App, {
     init: {},
     state: 'main',
-    map:{ size: {width: 240, height: 240 / Math.PI}},
+    map:{ size: {width: 240, height: 240 / Math.PI}, stats: {}},
     streams: {latest:[], mostWatched: []},
     messages: [{message: 'welcome to globe.camera!'}]
   }, document.body
@@ -163,7 +176,7 @@ render(
 
 let mapRetries = 0;
 function connectToMapServer(mutation) {
-  const socket = new WebSocket('ws://localhost:8888');
+  const socket = new WebSocket('ws://localhost:8888?viewer');
 
   socket.addEventListener('open', () => {
     mapRetries = 0;
@@ -181,17 +194,32 @@ function connectToMapServer(mutation) {
     switch (type) {
       case 'NEW_STREAM':
         const {id, image, location, color} = message;
-        mutation(NEW_STREAM, mutation)({id, image, location, color});
+        mutation(NEW_STREAM, mutation)({id: new Uint8Array(id.data), image, location, color});
         break;
+
       case 'SHARE_CAMERA':
         const {broadcast, sender} = message;
 
         mutation(_ => {
-          _.signaler.register(sender.data);
-          _.signaler.connectTo(broadcast.in.data);
+          _.signaler.registerAs(new Uint8Array(sender.data));
+          _.signaler.connectTo(new Uint8Array(broadcast.in.data), peerConnection => {
+            peerConnection.addStream(_.sharedStream);
+            // _.sharedStream.getTracks().forEach(track => peerConnection.addTrack(track, _.sharedStream));
+          });
         })();
 
         console.log('share_camera', broadcast, sender);
+        break;
+
+      case 'STATS':
+      console.log('stats', message);
+        const {broadcasters, availableBroadcasters} = message;
+
+        mutation(_ => {
+          _.map.stats.broadcasters = broadcasters;
+          _.map.stats.availableBroadcasters = availableBroadcasters;
+        })();
+
       default:
         break;
     }
@@ -210,7 +238,7 @@ let signalerRetries = 0,
 window.crypto.getRandomValues(id);
 
 function connectToSignaler(mutation) {
-  const socket = new WebSocket('wss://p2p.ninja/signaler');
+  const socket = new WebSocket('wss://p2p.ninja/signaler?viewer');
 
   socket.addEventListener('open', () => {
     signalerRetries = 0;

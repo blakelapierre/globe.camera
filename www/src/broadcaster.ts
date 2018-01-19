@@ -1,12 +1,43 @@
-const mapServer = 'ws://localhost:8888',
-      signalingServer = 'wss://p2p.ninja/signaler';
+import signalServerConnection from './signalServerConnection';
+
+const mapServer = 'ws://localhost:8888?broadcaster',
+      signalingServer = 'wss://p2p.ninja/signaler?broadcaster';
 
 export {becomeBroadcaster};
 
 function becomeBroadcaster(registeredCallback) {
-  const signal = makeSignalingServerConnection(),
+  const inSignal = signalServerConnection({
+                   'signal': {
+                     'connection-state': status => console.log('connection-state', status),
+                     'partner-message': ([partner, message]) => console.log('partner-message', partner, message),
+                   },
+                   'peer': {
+                     'connection': peerConnection => {
+                        mapServerSocket.send(JSON.stringify(['NEW_STREAM']));
+
+                        peerConnection.addEventListener('connection', event => {
+                          console.log('broadcaster peer open', peerConnection);
+                        });
+                     }
+                   }
+                 }),
+        outSignal = signalServerConnection({
+                   'signal': {
+                     'connection-state': status => console.log('connection-state', status),
+                     'partner-message': ([partner, message]) => console.log('partner-message', partner, message),
+                   },
+                   'peer': {
+                     'connection': peerConnection => {
+                        mapServerSocket.send(JSON.stringify(['NEW_STREAM']));
+
+                        peerConnection.addEventListener('connection', event => {
+                          console.log('broadcaster peer open', peerConnection);
+                        });
+                     }
+                   }
+                 }),
         mapServerSocket = makeMapServerConnection(id => {
-                            signal.registerAs(id);
+                            inSignal.registerAs(id);
                             registeredCallback(id);
                           });
 
@@ -34,26 +65,26 @@ function becomeBroadcaster(registeredCallback) {
     return socket;
   }
 
-  function makeSignalingServerConnection() {
-    const socket = new WebSocket(signalingServer);
+  // function makeSignalingServerConnection() {
+  //   const socket = new WebSocket(signalingServer);
 
-    let registerAs;
+  //   let registerAs;
 
-    socket.addEventListener('open', () => {
-      if (registerAs) socket.send(registerAs);
-    });
+  //   socket.addEventListener('open', () => {
+  //     if (registerAs) socket.send(registerAs);
+  //   });
 
-    socket.addEventListener('message', event => {
+  //   socket.addEventListener('message', event => {
 
-    });
+  //   });
 
-    return {
-      registerAs(id) {
-        if (socket.readyState === WebSocket.OPEN) {
-          socket.send(id);
-        }
-        else registerAs = id;
-      }
-    }
-  }
+  //   return {
+  //     registerAs(id) {
+  //       if (socket.readyState === WebSocket.OPEN) {
+  //         socket.send(id);
+  //       }
+  //       else registerAs = id;
+  //     }
+  //   }
+  // }
 }
