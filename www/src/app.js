@@ -204,7 +204,7 @@ function connectToMapServer(mutation) {
           _.signaler.registerAs(new Uint8Array(sender.data));
           _.signaler.connectTo(new Uint8Array(broadcast.in.data), peerConnection => {
             peerConnection.addStream(_.sharedStream);
-            // _.sharedStream.getTracks().forEach(track => peerConnection.addTrack(track, _.sharedStream));
+            // _.sharedStream.getTracks().forEach(track => peerConnection.addTrack(track, _.sharedStream)); // new way...supposedly...didn't work for me ^^
           });
         })();
 
